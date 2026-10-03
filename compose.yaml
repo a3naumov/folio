@@ -1,0 +1,33 @@
+name: ${COMPOSE_PROJECT_NAME:-folio}
+
+services:
+  frontend:
+    profiles: [frontend]
+    container_name: ${COMPOSE_PROJECT_NAME:-folio}-frontend
+    image: node:24-bookworm-slim
+    init: true
+    working_dir: /app
+    tty: true
+    ports:
+      - target: 5173
+        published: "${SERVICE_FRONTEND_PORT:-5173}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: ./src/frontend
+        target: /app
+        read_only: false
+        bind:
+          create_host_path: false
+    networks:
+      - frontend
+    command:
+      - sh
+      - -c
+      - sh scripts/install.sh && exec npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
+
+networks:
+  frontend:
+    name: ${COMPOSE_PROJECT_NAME:-folio}-frontend
+    driver: bridge
