@@ -1,6 +1,6 @@
 # Folio
 
-A React + TypeScript starter application powered by Vite for local development.
+A React + TypeScript portfolio UI preview built with Radix Themes and Vite.
 Docker Compose runs a single `frontend` service on Node.js 24 LTS using the
 official `node:24-bookworm-slim` image.
 
@@ -23,7 +23,8 @@ make logs
 ```
 
 Wait for Vite to report that it is ready, then open <http://127.0.0.1:5173>.
-The page includes a counter button and links to the React and Vite documentation.
+Use the sidebar to switch between Portfolio and Transactions. Both pages use
+static demo data; filters, exports, and transaction actions are unavailable.
 Press `Ctrl+C` to stop following logs; the container will keep running.
 
 `.env` contains local Docker Compose settings and is ignored by Git.
@@ -48,8 +49,9 @@ docker compose --profile frontend down
 See the [Compose profiles documentation](https://docs.docker.com/compose/how-tos/profiles/)
 for details on selecting service groups.
 
-Startup uses `npm ci` when `src/frontend/package-lock.json` is present for
-reproducible installations. If the lock file is missing, `npm install` creates it,
+Startup uses `npm ci` when `src/frontend/package-lock.json` matches the declared
+dependencies for reproducible installations. If the lock file is missing or the
+declared dependencies have changed, `npm install` updates it,
 resolving React and React DOM from the stable `latest` channel.
 Keep the lock file in version control.
 
