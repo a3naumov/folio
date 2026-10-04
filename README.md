@@ -115,6 +115,23 @@ Migrations are explicit and never run automatically at container startup.
 Cache and sessions use files; the queue is synchronous, so no additional
 services or database tables are needed to open the UI or check the API.
 
+### Backend CI
+
+The [Backend checks workflow](.github/workflows/backend-checks.yaml) runs on
+every push and pull request. It can also be started manually from GitHub's
+Actions tab using **Run workflow**.
+
+The `Tests` job builds the `dev` target from `docker/backend/Dockerfile`, using
+the same FrankenPHP, PHP, Composer, extensions, and PHP configuration as local
+backend development. The image versions are maintained in that Dockerfile.
+Build arguments match the runner's UID/GID so the non-root `appuser` can write
+to the mounted `src/backend` directory.
+
+CI installs the dependencies from `src/backend/composer.lock`, including
+development dependencies, then runs `composer test` inside the built image.
+Tests use in-memory SQLite and require no repository secrets or running
+application services. Run the same test suite locally with `make test`.
+
 ## Production
 
 Initialize dependencies and commit both lock files before building production

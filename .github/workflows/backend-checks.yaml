@@ -1,0 +1,57 @@
+name: Backend checks
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Tests
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: bash
+    env:
+      APP_ENV: testing
+      BACKEND_IMAGE: folio-backend:ci
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build backend image
+        run: |
+          docker build \
+            --file docker/backend/Dockerfile \
+            --target dev \
+            --build-arg USER_UID="$(id -u)" \
+            --build-arg USER_GID="$(id -g)" \
+            --tag "$BACKEND_IMAGE" \
+            .
+
+      - name: Install dependencies
+        run: |
+          docker run --rm \
+            --env APP_ENV \
+            --mount "type=bind,source=${GITHUB_WORKSPACE}/src/backend,target=/app" \
+            "$BACKEND_IMAGE" \
+            composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Run tests
+        run: |
+          docker run --rm \
+            --env APP_ENV \
+            --mount "type=bind,source=${GITHUB_WORKSPACE}/src/backend,target=/app" \
+            "$BACKEND_IMAGE" \
+            composer test
