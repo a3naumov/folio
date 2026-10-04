@@ -15,7 +15,9 @@ export function AppShell({ page, children }: AppShellProps) {
   return (
     <div className="app-shell">
       <aside className="sidebar" aria-label="Main navigation">
-        <a href="#/portfolio" className="wordmark" aria-label="Folio home">folio<span>.</span></a>
+        <a href="#/portfolio" className="wordmark" aria-label="Folio home">
+          <img src="/folio-logo.svg" alt="" width="136" height="49" />
+        </a>
         <nav className="primary-nav" aria-label="Portfolio navigation">
           <a href="#/portfolio" className="nav-item" aria-current={page === 'portfolio' ? 'page' : undefined}>
             <DashboardIcon aria-hidden="true" />Portfolio

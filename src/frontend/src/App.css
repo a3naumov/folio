@@ -22,14 +22,12 @@
   box-shadow: var(--folio-shadow);
 }
 .wordmark {
+  display: block;
   width: fit-content;
-  margin: 0 10px 36px;
-  font-size: 29px;
-  font-weight: 600;
+  margin: 0 10px 18px;
   line-height: 1;
-  letter-spacing: -1.7px;
 }
-.wordmark span { color: var(--folio-accent); }
+.wordmark img { display: block; width: 136px; height: auto; }
 .primary-nav, .workspace-nav nav { display: grid; gap: 7px; }
 .nav-item {
   display: flex;
@@ -191,7 +189,8 @@ h1 { margin: 0; font-size: 28px; font-weight: 600; letter-spacing: -1px; line-he
 @media (max-width: 700px) {
   .app-shell { display: block; padding: 16px; }
   .sidebar { position: static; width: 100%; height: auto; min-height: 0; padding: 18px; border-radius: 16px; margin-bottom: 24px; }
-  .wordmark { margin: 0 0 20px; font-size: 26px; }
+  .wordmark { margin: 0 0 20px; }
+  .wordmark img { width: 120px; }
   .primary-nav { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
   .primary-nav button, .workspace-nav, .sidebar-bottom { display: none; }
   .nav-item { justify-content: center; font-size: 13px; }

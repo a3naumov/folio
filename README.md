@@ -1,8 +1,15 @@
-# Folio
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/folio-logo-dark.svg" />
+  <img src=".github/assets/folio-logo-light.svg" alt="Folio" width="240" height="86" />
+</picture>
 
 A React + TypeScript portfolio UI built with Radix Themes, a Laravel 13 API
 served by FrankenPHP and Octane, and PostgreSQL 18. Caddy is the application
 entry point. The UI currently uses static demo data; business actions are disabled.
+
+![Folio portfolio interface](.github/assets/folio-desktop.png)
+
+[Mobile preview](.github/assets/folio-mobile.png)
 
 ## Requirements
 
@@ -263,6 +270,13 @@ src/
   backend/            # Laravel API, migrations, and feature tests
 LICENSE               # Apache License 2.0
 ```
+
+## Brand assets
+
+Frontend logo and icon files live in `src/frontend/public`. GitHub logos,
+social previews, and app screenshots live in `.github/assets`.
+Use `.github/assets/folio-preview-light.png` for the repository social preview;
+`.github/assets/folio-preview-dark.png` is the dark alternative.
 
 ## License
 
