@@ -1,0 +1,15 @@
+{
+    auto_https disable_redirects
+    servers {
+        protocols h1 h2
+    }
+}
+
+{$APP_DOMAIN} {
+    tls {
+        issuer acme {
+            disable_http_challenge
+        }
+    }
+    import /etc/caddy/routes.caddy
+}

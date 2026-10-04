@@ -2,32 +2,146 @@ name: ${COMPOSE_PROJECT_NAME:-folio}
 
 services:
   frontend:
-    profiles: [frontend]
     container_name: ${COMPOSE_PROJECT_NAME:-folio}-frontend
-    image: node:24-bookworm-slim
+    build:
+      context: .
+      dockerfile: docker/frontend/Dockerfile
+      target: production
+    image: ${COMPOSE_PROJECT_NAME:-folio}-frontend:production
     init: true
-    working_dir: /app
-    tty: true
-    ports:
-      - target: 5173
-        published: "${SERVICE_FRONTEND_PORT:-5173}"
-        host_ip: 127.0.0.1
-        protocol: tcp
-    volumes:
-      - type: bind
-        source: ./src/frontend
-        target: /app
-        read_only: false
-        bind:
-          create_host_path: false
+    environment:
+      PORT: "3000"
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:' + process.env.PORT).then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 60s
     networks:
       - frontend
-    command:
-      - sh
-      - -c
-      - sh scripts/install.sh && exec npm run dev -- --host 0.0.0.0 --port 5173 --strictPort
+    restart: unless-stopped
+
+  backend:
+    container_name: ${COMPOSE_PROJECT_NAME:-folio}-backend
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+      target: production
+    image: ${COMPOSE_PROJECT_NAME:-folio}-backend:production
+    init: true
+    stop_grace_period: 45s
+    environment:
+      APP_NAME: Folio
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_KEY: ${APP_KEY:-}
+      APP_URL: https://${APP_DOMAIN:-app.example.com}:${SERVICE_CADDY_HTTPS_PORT:-443}
+      OCTANE_SERVER: frankenphp
+      OCTANE_HTTPS: "true"
+      LOG_CHANNEL: stderr
+      DB_CONNECTION: pgsql
+      DB_HOST: postgres
+      DB_PORT: "5432"
+      DB_DATABASE: ${POSTGRES_DB:-folio}
+      DB_USERNAME: ${POSTGRES_USER:-folio}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-}
+      CACHE_STORE: file
+      SESSION_DRIVER: file
+      QUEUE_CONNECTION: sync
+    volumes:
+      - type: volume
+        source: backend_storage
+        target: /app/storage
+        read_only: false
+    networks:
+      - backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - php
+        - -r
+        - "exit(@file_get_contents('http://127.0.0.1:8000/up') === false ? 1 : 0);"
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
+
+  caddy:
+    container_name: ${COMPOSE_PROJECT_NAME:-folio}-caddy
+    build:
+      context: .
+      dockerfile: docker/caddy/Dockerfile
+    image: ${COMPOSE_PROJECT_NAME:-folio}-caddy:production
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-app.example.com}
+      FRONTEND_UPSTREAM: frontend:3000
+    ports:
+      - target: 443
+        published: "${SERVICE_CADDY_HTTPS_PORT:-443}"
+        protocol: tcp
+    volumes:
+      - type: volume
+        source: caddy_data
+        target: /data
+        read_only: false
+      - type: volume
+        source: caddy_config
+        target: /config
+        read_only: false
+    networks:
+      - frontend
+      - backend
+    depends_on:
+      frontend:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  postgres:
+    container_name: ${COMPOSE_PROJECT_NAME:-folio}-postgres
+    image: postgres:18-bookworm
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-folio}
+      POSTGRES_USER: ${POSTGRES_USER:-folio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-}
+    volumes:
+      - type: volume
+        source: postgres_data
+        target: /var/lib/postgresql
+        read_only: false
+    networks:
+      - backend
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    restart: unless-stopped
 
 networks:
   frontend:
     name: ${COMPOSE_PROJECT_NAME:-folio}-frontend
     driver: bridge
+  backend:
+    name: ${COMPOSE_PROJECT_NAME:-folio}-backend
+    driver: bridge
+
+volumes:
+  postgres_data:
+    name: ${COMPOSE_PROJECT_NAME:-folio}-postgres-data
+  backend_storage:
+    name: ${COMPOSE_PROJECT_NAME:-folio}-backend-storage
+  caddy_data:
+    name: ${COMPOSE_PROJECT_NAME:-folio}-caddy-data
+  caddy_config:
+    name: ${COMPOSE_PROJECT_NAME:-folio}-caddy-config

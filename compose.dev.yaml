@@ -1,0 +1,64 @@
+services:
+  frontend:
+    build:
+      target: development
+    image: ${COMPOSE_PROJECT_NAME:-folio}-frontend:development
+    working_dir: /app
+    tty: true
+    user: node
+    environment:
+      PORT: "5173"
+      SERVICE_CADDY_PORT: ${SERVICE_CADDY_PORT:-8080}
+    command: [sh, -c, 'sh scripts/install.sh && exec npm run dev -- --host 0.0.0.0 --port 5173 --strictPort']
+    ports:
+      - target: 5173
+        published: "${SERVICE_FRONTEND_PORT:-5173}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+    volumes:
+      - type: bind
+        source: ./src/frontend
+        target: /app
+        read_only: false
+        bind:
+          create_host_path: false
+
+  backend:
+    build:
+      target: dev
+      args:
+        USER_UID: ${LOCAL_UID:-1000}
+        USER_GID: ${LOCAL_GID:-1000}
+        PHP_IDE_CONFIG_SERVER_NAME: ${PHP_IDE_CONFIG_SERVER_NAME:-folio}
+    image: ${COMPOSE_PROJECT_NAME:-folio}-backend:development
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://127.0.0.1:${SERVICE_CADDY_PORT:-8080}
+      OCTANE_HTTPS: "false"
+    command: [php, artisan, 'octane:frankenphp', '--host=0.0.0.0', '--port=8000', '--admin-host=127.0.0.1', '--admin-port=2019', '--workers=1', '--max-requests=500', '--watch', '--log-level=info']
+    extra_hosts:
+      - host.docker.internal:host-gateway
+    volumes: !override
+      - type: bind
+        source: ./src/backend
+        target: /app
+        read_only: false
+        bind:
+          create_host_path: false
+
+  caddy:
+    environment:
+      FRONTEND_UPSTREAM: frontend:5173
+    command: [caddy, run, --config, /etc/caddy/Caddyfile.dev, --adapter, caddyfile]
+    ports: !override
+      - target: 80
+        published: "${SERVICE_CADDY_PORT:-8080}"
+        host_ip: 127.0.0.1
+        protocol: tcp
+  postgres:
+    ports:
+      - target: 5432
+        published: "${SERVICE_POSTGRES_PORT:-5432}"
+        host_ip: 127.0.0.1
+        protocol: tcp

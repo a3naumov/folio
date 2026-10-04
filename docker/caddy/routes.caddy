@@ -1,0 +1,15 @@
+encode zstd gzip
+
+@backend path /api /api/* /up
+handle @backend {
+    reverse_proxy backend:8000
+}
+
+handle {
+    reverse_proxy {$FRONTEND_UPSTREAM}
+}
+
+log {
+    output stdout
+    format json
+}

@@ -1,0 +1,10 @@
+/vendor/
+/bootstrap/cache/*.php
+/storage/**/*.key
+/.phpunit.result.cache
+/.phpunit.cache/
+/coverage/
+*.log
+/.env
+/.env.*
+!/.env.example
